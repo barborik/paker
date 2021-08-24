@@ -2,7 +2,7 @@
 #include <fstream>
 #include <filesystem>
 
-const char* msg = "usage:\n	-c <dir> to compile\n	-l <PAK file> to list\n";
+const char* msg = "usage:\n	-c <dir> ... compile directory\n	-l <PAK file> ... list contents of a PAK file\n";
 
 void compile(std::string dir)
 {
