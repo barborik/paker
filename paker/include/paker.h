@@ -7,40 +7,48 @@ namespace pak
 	// returns pointer to the data of the file requested
 	// returns 0 on fail
 	// free memory after youre done using it
-	char* load(const char* fileName, const char* pakName, size_t* fileSize)
+	char* load(const char* filename, const char* pakPath, size_t* fileSize)
 	{
-		std::ifstream pakFile(pakName);
+		std::ifstream pakFile(pakPath);
 
-		// discard magic numbers
-		pakFile.ignore(sizeof(char) * 2);
+		// check for validity
+		char magic[3];
+		pakFile.read(magic, 2);
+		magic[2] = 0;
+		std::string smagic = magic;
+		if (smagic != "AB")
+		{
+			return 0;
+		}
 
-		size_t headerSize;
-		pakFile.read((char*)&headerSize, sizeof(size_t));
+		size_t hSize;
+		pakFile.read((char*)&hSize, sizeof(size_t));
 
-		size_t fileOffset;
-		for (int i = 0; i < headerSize / (255 + sizeof(size_t) * 2); i++)
+		// find file by filename and get its offset
+		size_t fOffset;
+		for (int i = 0; i < hSize / (255 + sizeof(size_t) * 2); i++)
 		{
 			char fname[255];
 			pakFile.read(fname, 255);
 
 			std::string sname = fname;
-			if (fileName == sname)
+			if (fname == sname)
 			{
-				pakFile.read((char*)&fileOffset, sizeof(size_t));
+				pakFile.read((char*)&fOffset, sizeof(size_t));
 				pakFile.read((char*)fileSize, sizeof(size_t));
 				break;
 			}
 
 			pakFile.ignore(sizeof(size_t) * 2);
-
-			if (i == headerSize / (255 + sizeof(size_t) * 2) - 1)
-			{
-				return 0;
-			}
 		}
-		pakFile.clear();
-		pakFile.seekg(0, pakFile.beg);
-		pakFile.ignore(fileOffset);
+
+		// no offset found, return 0
+		if (fOffset == NULL)
+		{
+			return 0;
+		}
+
+		pakFile.seekg(fOffset);
 
 		char* data = (char*)malloc(*fileSize);
 		pakFile.read(data, *fileSize);
